@@ -47,18 +47,25 @@ def read_annotation_json():
     return usable_df_list
 
 class DataManipulationCoco:
-    def __init__(self, annotation_file=train_json_path):
+    def __init__(self, annotation_file=None, batch_size=None):
         self.coco = COCO(annotation_file)
+        self.batch_size = batch_size
+        self.num_class = self.get_number_of_class()
 
     def get_categories(self):
         category_ids = self.coco.getCatIds()
         self.categories = self.coco.loadCats(category_ids)
         return self.categories
 
+    def get_number_of_class(self):
+        classes = [category['name'] for category in self.get_categories()]
+        return len(classes)
+
+
     def get_class_for_category_id(self, category_id):
         categories = self.get_categories()
         for i in range(categories):
-            if categories[i]['id']==category_id:
+            if categories[i]['id'] == category_id:
                 return categories[i]['name']
         return None
 
@@ -135,7 +142,7 @@ class DataManipulationCoco:
         return train_mask
 
     def dataGeneratorCoco(self, images, classes=None,
-                          input_image_size=(224, 224), batch_size=4,  mask_type='normal'):
+                          input_image_size=(224, 224), batch_size=None,  mask_type='normal'):
 
         img_folder = r'../../data/trainingset/'
         dataset_size = len(images)
@@ -143,6 +150,7 @@ class DataManipulationCoco:
             classes = [category['name'] for category in self.get_categories()]
         catIds = self.coco.getCatIds(catNms=classes)
         print("This is catIds", catIds)
+        batch_size=self.batch_size
 
         c = 0
         while (True):
@@ -223,4 +231,3 @@ if __name__ == '__main__':
     images = data_manipulation.get_all_combination_subset()
     train_gen = data_manipulation.dataGeneratorCoco(images, None)
     data_manipulation.visualizeGenerator(train_gen)
-
