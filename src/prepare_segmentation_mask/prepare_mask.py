@@ -8,11 +8,10 @@ import skimage.io as io
 import cv2
 import os
 import random
+from tensorflow.keras.utils import to_categorical
 
-train_json_path = r'../../data/trainingset/annotations.json'
-val_json_path = r'../../data/testset/annotations.json'
 
-def read_annotation_json():
+def read_annotation_json(train_json_path = None):
     # make a file object for reading json path
     file_obj = open(train_json_path)
 
@@ -47,10 +46,15 @@ def read_annotation_json():
     return usable_df_list
 
 class DataManipulationCoco:
-    def __init__(self, annotation_file=None, batch_size=None):
+    def __init__(self, annotation_file=None, batch_size=None, training=False):
         self.coco = COCO(annotation_file)
         self.batch_size = batch_size
         self.num_class = self.get_number_of_class()
+
+        if training:
+            self.img_folder = r'../../data/trainingset/'
+        else:
+            self.img_folder=r'../../data/testset/'
 
     def get_categories(self):
         category_ids = self.coco.getCatIds()
@@ -116,7 +120,7 @@ class DataManipulationCoco:
         classes = [category['name'] for category in self.get_categories()]
         for a in range(len(anns)):
             className = self.getClassName(anns[a]['category_id'], cats)
-            pixel_value = classes.index(className) + 1
+            pixel_value = classes.index(className)
             new_mask = cv2.resize(self.coco.annToMask(anns[a]) * pixel_value, input_image_size)
             train_mask = np.maximum(new_mask, train_mask)
 
@@ -144,12 +148,11 @@ class DataManipulationCoco:
     def dataGeneratorCoco(self, images, classes=None,
                           input_image_size=(224, 224), batch_size=None,  mask_type='normal'):
 
-        img_folder = r'../../data/trainingset/'
+        img_folder = self.img_folder
         dataset_size = len(images)
         if classes is None:
             classes = [category['name'] for category in self.get_categories()]
         catIds = self.coco.getCatIds(catNms=classes)
-        print("This is catIds", catIds)
         batch_size=self.batch_size
 
         c = 0
@@ -178,7 +181,8 @@ class DataManipulationCoco:
             if (c + batch_size >= dataset_size):
                 c = 0
                 random.shuffle(images)
-            yield img, mask
+            mask_categorical = to_categorical(mask, num_classes=self.num_class)
+            yield img, mask_categorical
 
     def get_image_subset(self, filter_class=None):
         # Get all category class in case no class has been defined
@@ -200,6 +204,8 @@ class DataManipulationCoco:
 
     def visualizeGenerator(self, gen):
         img, mask = next(gen)
+
+        mask = np.argmax(mask, axis=3)
 
         fig = plt.figure(figsize=(20, 10))
         outerGrid = gridspec.GridSpec(1, 2, wspace=0.1, hspace=0.1)
