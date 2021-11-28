@@ -29,8 +29,8 @@ class EfficientNetModel:
         return x
 
     def build_efficient_unet(self, input_shape):
-        assert self.config_dict['input_shape'] == (input_shape[0],input_shape[1]), \
-            "The size from input generator doesnt match model"
+        # assert self.config_dict['input_shape'] == (input_shape[0],input_shape[1]), \
+        #     "The size from input generator doesnt match model"
 
         # Define the input layer
         inputs = tf.keras.Input(input_shape)

@@ -13,7 +13,7 @@ class MobilenetModels:
         inputs = Input(input_shape, name="input_image")
 
         # pretrained encoder
-        encoder = MobileNetV2(input_tensor=inputs, weights='imagenet', include_top=False, alpha=0.35)
+        encoder = MobileNetV2(input_tensor=inputs, weights='imagenet', include_top=False, alpha=1)
         skip_connection_names = ['input_image', 'block_1_expand_relu','block_3_expand_relu',
                                  'block_6_expand_relu']
         encoder_output = encoder.get_layer('block_13_expand_relu').output  #(16, 16)
