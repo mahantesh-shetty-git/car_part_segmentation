@@ -3,6 +3,8 @@ import configparser
 import datetime
 import os
 import sys
+import segmentation_models as sm
+import tensorflow.keras.losses
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
@@ -128,11 +130,15 @@ if __name__=='__main__':    ## add logging and exception handling
     # get the model for training
     # efficinet_class_init = EN_model.EfficientNetModel(num_class, backbone)
     # model = efficinet_class_init.build_efficient_unet(input_size)       #need to passs input shape here
-    #
+    # #
     mobilenet_class_init = MN_model.MobilenetModels(num_class)
     model = mobilenet_class_init.build_mobilenet_model(input_size)
 
-    model.compile('adam', loss='categorical_crossentropy', metrics=['accuracy'])
+    focal_loss = sm.losses.CategoricalFocalLoss(gamma=10)
+
+    metrics = [sm.metrics.IOUScore(threshold=0.5), sm.metrics.FScore(threshold=0.5)]
+
+    model.compile('adam', loss=focal_loss, metrics='accuracy')
 
     # Deal with class imbalance # have to incorporate it in
     if eval(config_dict['use_class_weight']):
@@ -146,9 +152,8 @@ if __name__=='__main__':    ## add logging and exception handling
     tboard_log_dir = r'../../log_dir/tboard_log_dir/' + config_dict['backbone']+time
     callbacks = [TensorBoard(tboard_log_dir, histogram_freq=1),
                  ModelCheckpoint(model_ckpt_dir, monitor='val_loss'
-                                 , save_best_only=True
+                                 , save_best_only=True,
                                  ),
-                 EarlyStopping(patience=10)
                  ]
 
     # fit the model
