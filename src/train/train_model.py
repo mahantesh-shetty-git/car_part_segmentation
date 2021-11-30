@@ -134,7 +134,8 @@ if __name__=='__main__':    ## add logging and exception handling
     mobilenet_class_init = MN_model.MobilenetModels(num_class)
     model = mobilenet_class_init.build_mobilenet_model(input_size)
 
-    focal_loss = sm.losses.CategoricalFocalLoss(gamma=10)
+    # focal_loss = sm.losses.CategoricalFocalLoss(gamma=10)+sm.losses.DiceLoss()
+    focal_loss = sm.losses.DiceLoss()
 
     metrics = [sm.metrics.IOUScore(threshold=0.5), sm.metrics.FScore(threshold=0.5)]
 
